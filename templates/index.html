@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>CSR Practice Training</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{margin:0;font-family:Arial;background:#fff;color:#222}
+header{padding:12px;border-bottom:1px solid #ddd;text-align:center;font-weight:bold}
+#controls{text-align:center;padding:10px}
+select,button{padding:8px;font-size:14px}
+#topInfo{display:none;padding:8px;border-bottom:1px solid #ddd;background:#fafafa;text-align:center}
+#main{display:grid;grid-template-columns:4fr 1fr;gap:10px;padding:10px;max-width:1200px;margin:auto}
+#chat{border:1px solid #ddd;border-radius:6px;padding:14px;height:65vh;overflow-y:auto}
+.bubble{padding:10px;margin:10px 0;border-radius:6px;max-width:75%;line-height:1.5}
+.customer{background:#e8f0fe}
+.user{background:#e6f4ea;margin-left:auto}
+.ideal{background:#fff4e5;border-left:4px solid #ffb020}
+.highlight{background:yellow;font-weight:bold}
+#report{border:1px solid #ddd;border-radius:6px;padding:10px;background:#fafafa;height:65vh;font-size:13px;overflow-y:auto}
+#report h3{text-align:center;margin-top:0}
+#suggest{border-top:1px solid #ddd;margin-top:10px;padding-top:8px;font-size:12px}
+.tag{display:inline-block;background:#eef;padding:3px 6px;margin:3px;border-radius:4px}
+#input{display:flex;gap:8px;padding:10px;border-top:1px solid #ddd;max-width:1200px;margin:auto}
+textarea{flex:1;padding:10px;font-size:15px;resize:none}
+#warning{color:red;text-align:center;font-size:13px}
+@media(max-width:768px){
+#main{grid-template-columns:1fr}
+#chat,#report{height:auto}
+}
+</style>
+</head>
+
+<body>
+
+<header>CSR PRACTICE TRAINING</header>
+
+<div id="controls">
+<select id="industry">
+{% for i in industries %}
+<option value="{{ i }}">{{ i }}</option>
+{% endfor %}
+</select>
+<button onclick="startPractice()">Start</button>
+</div>
+
+<div id="topInfo">
+<div id="industryName"></div>
+<div id="scenarioType"></div>
+<div id="timer">⏱️ Time: 0 sec</div>
+</div>
+
+<p id="warning"></p>
+
+<div id="main">
+<div id="chat"></div>
+
+<div id="report">
+<h3>Scenario Report</h3>
+<p>Answer to see details</p>
+<div id="suggest"></div>
+</div>
+</div>
+
+<div id="input">
+<textarea id="answer" rows="3"
+placeholder="Enter = Send | Shift+Enter = New line"
+disabled></textarea>
+<button id="sendBtn" onclick="sendAnswer()" disabled>Send</button>
+</div>
+
+<script>
+let scenarios=[],index=0,industry="",startTime,timerInt;
+const politeWords=["sorry","apologize","please","thank","understand","assist","help"];
+const rudeWords=["stupid","useless","idiot","shut","angry","fraud","scam"];
+
+function normalize(t){
+return t.toLowerCase().replace(/[^a-z\s]/g,"").split(/\s+/).filter(w=>w.length>=3);
+}
+
+function toneScore(text){
+let w=normalize(text);
+let polite=w.filter(x=>politeWords.includes(x)).length;
+let rude=w.filter(x=>rudeWords.includes(x)).length;
+if(rude>0) return "❌ Rude";
+if(polite>=2) return "✅ Polite";
+return "⚠️ Neutral";
+}
+
+function startPractice(){
+industry=document.getElementById("industry").value;
+fetch("/start",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({industry})})
+.then(r=>r.json()).then(d=>{
+scenarios=d;index=0;
+document.getElementById("chat").innerHTML="";
+document.getElementById("topInfo").style.display="block";
+document.getElementById("industryName").innerText="Industry: "+industry;
+enableInput();showCustomer();
+});
+}
+
+function showCustomer(){
+let s=scenarios[index];
+document.getElementById("scenarioType").innerText="Scenario: "+s.scenario_type;
+addBubble(s.customer,"customer");
+startTimer();
+showSuggestions(s.ideal);
+}
+
+function startTimer(){
+let t=0;startTime=Date.now();
+clearInterval(timerInt);
+timerInt=setInterval(()=>{
+t++;document.getElementById("timer").innerText="⏱️ Time: "+t+" sec";
+},1000);
+}
+
+function sendAnswer(){
+let txt=document.getElementById("answer").value.trim();
+if(!txt)return;
+clearInterval(timerInt);
+
+let words=normalize(txt).length;
+let time=(Date.now()-startTime)/1000;
+let wpm=Math.round((words/time)*60);
+let tone=toneScore(txt);
+
+addBubble(txt,"user");
+
+let ideal=scenarios[index].ideal;
+addBubble(highlight(ideal,txt),"ideal");
+
+let used=getUsed(txt,ideal);
+let missing=getMissing(txt,ideal);
+
+document.getElementById("report").innerHTML=`
+<h3>Scenario Report</h3>
+<p><b>Tone:</b> ${tone}</p>
+<p><b>Time:</b> ${time.toFixed(1)} sec</p>
+<p><b>Words:</b> ${words}</p>
+<p><b>WPM:</b> ${wpm}</p>
+<p><b>Used Keywords:</b><br>${used.join(", ")||"None"}</p>
+<p><b>Missing Keywords:</b><br>${missing.join(", ")||"None"}</p>
+`;
+
+document.getElementById("answer").value="";
+index++;
+
+if(index<scenarios.length){
+setTimeout(showCustomer,800);
+}else{
+addBubble("✅ Industry completed. Please change industry.","customer");
+disableInput();
+}
+}
+
+function highlight(ideal,user){
+let uw=normalize(user);
+return ideal.split(" ").map(w=>{
+let c=w.toLowerCase().replace(/[^a-z]/g,"");
+return uw.some(u=>c.startsWith(u)||u.startsWith(c))
+?`<span class="highlight">${w}</span>`:w;
+}).join(" ");
+}
+
+function getUsed(user,ideal){
+let u=normalize(user),i=normalize(ideal);
+return i.filter(x=>u.includes(x));
+}
+function getMissing(user,ideal){
+let u=normalize(user),i=normalize(ideal);
+return i.filter(x=>!u.includes(x));
+}
+
+function showSuggestions(ideal){
+let kws=[...new Set(normalize(ideal))];
+document.getElementById("suggest").innerHTML=
+"<b>Suggested Keywords:</b><br>"+
+kws.map(k=>`<span class="tag">${k}</span>`).join("");
+}
+
+function addBubble(t,c){
+let d=document.createElement("div");
+d.className="bubble "+c;d.innerHTML=t;
+document.getElementById("chat").appendChild(d);
+document.getElementById("chat").scrollTop=999999;
+}
+
+function enableInput(){
+answer.disabled=false;sendBtn.disabled=false;answer.focus();
+}
+function disableInput(){
+answer.disabled=true;sendBtn.disabled=true;
+}
+
+answer.addEventListener("keydown",e=>{
+if(e.key==="Enter"&&!e.shiftKey){
+e.preventDefault();sendAnswer();
+}});
+</script>
+
+</body>
+</html>
