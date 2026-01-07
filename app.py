@@ -17,9 +17,12 @@ INDUSTRY_FILES = {
     "CAR_RENTAL": "car rentals Q&A CSR 1.docx"
 }
 
-
 def load_scenarios(docx_file):
     path = os.path.join(DATA_FOLDER, docx_file)
+    # Error handling in case file doesn't exist
+    if not os.path.exists(path):
+        return []
+
     doc = Document(path)
 
     scenarios = []
@@ -44,9 +47,11 @@ def load_scenarios(docx_file):
             current_scenario_type = "🔥 ESCALATION / THREATENING"
             continue
 
-        # Detect customer message
-        if re.search(r'customer\s*:', text, re.IGNORECASE):
-            customer = re.split(r'customer\s*:', text, flags=re.IGNORECASE)[-1].strip()
+        # --- FIX STARTS HERE ---
+        # Detect 'Customer:' OR 'Patient:' (Case insensitive)
+        if re.search(r'(customer|patient)\s*:', text, re.IGNORECASE):
+            # Split using non-capturing group (?:...) to ensure we just get the text part
+            customer = re.split(r'(?:customer|patient)\s*:', text, flags=re.IGNORECASE)[-1].strip()
 
         # Detect CSR answer
         elif re.search(r'csr\s*:', text, re.IGNORECASE) and customer:
@@ -57,25 +62,27 @@ def load_scenarios(docx_file):
                 "ideal": csr
             })
             customer = None
+        # --- FIX ENDS HERE ---
 
     return scenarios
-
 
 @app.route("/")
 def index():
     return render_template("index.html", industries=INDUSTRY_FILES.keys())
 
-
 @app.route("/start", methods=["POST"])
 def start():
     industry = request.json["industry"]
+    # Check if key exists to prevent crash
+    if industry not in INDUSTRY_FILES:
+         return jsonify({"error": "Industry not found"})
+         
     scenarios = load_scenarios(INDUSTRY_FILES[industry])
 
     if not scenarios:
-        return jsonify({"error": "No scenarios found in file!"})
+        return jsonify({"error": "No scenarios found! Check if file uses 'Customer:' or 'Patient:' labels."})
 
     return jsonify(scenarios)
-
 
 if __name__ == "__main__":
     app.run(debug=True)

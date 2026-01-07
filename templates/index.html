@@ -1,266 +1,313 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CSR Pro | Training Simulator</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>CSR Pro | Auto-Focus Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-    /* THEMING SYSTEM 
-       Default is now "Dark" to prevent eye strain immediately.
-    */
     :root {
-        --primary: #6366f1;
-        --bg: #f8fafc;
-        --sidebar-bg: #ffffff;
-        --text-main: #1e293b;
+        /* LIGHT MODE (Default) */
+        --bg-gradient: radial-gradient(circle at top left, #e0f2fe, #f0f9ff);
+        --glass-bg: rgba(255, 255, 255, 0.65);
+        --glass-border: rgba(255, 255, 255, 0.9);
+        --glass-shadow: rgba(14, 165, 233, 0.1);
+        
+        --text-main: #0f172a;
         --text-muted: #64748b;
-        --border: #e2e8f0;
+        --input-bg: rgba(255, 255, 255, 0.5);
         
-        --chat-bg: #f1f5f9;
-        --bubble-customer: #ffffff;
-        --text-customer: #1e293b;
-        --bubble-user: #6366f1;
-        --text-user: #ffffff;
+        --primary-grad: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+        --primary-shadow: rgba(37, 99, 235, 0.2);
         
-        --success: #10b981;
-        --danger: #ef4444;
-        --warning: #f59e0b;
+        --bubble-cust-bg: #ffffff;
+        --bubble-cust-text: #334155;
+        
         --feedback-bg: #fff7ed;
         --feedback-border: #fed7aa;
-        --feedback-text: #9a3412;
+        --feedback-text: #c2410c;
+        
+        --option-bg: #ffffff;
     }
 
     [data-theme="dark"] {
-        --primary: #818cf8;
-        --bg: #0f172a;        /* Deep Blue/Grey - Easy on eyes */
-        --sidebar-bg: #1e293b;
-        --text-main: #f1f5f9;
-        --text-muted: #94a3b8;
-        --border: #334155;
+        /* DARK MODE (Neutral Professional) */
+        /* Changed from Neon Blue to Standard Dark Gray/Black */
+        --bg-gradient: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+        --glass-bg: rgba(39, 39, 42, 0.8); /* Zinc 800 */
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --glass-shadow: rgba(0, 0, 0, 0.8);
         
-        --chat-bg: #0f172a;
-        --bubble-customer: #334155;
-        --text-customer: #f1f5f9;
-        --bubble-user: #4f46e5;
-        --text-user: #ffffff;
-
-        --feedback-bg: #332d20; /* Darker amber for dark mode */
-        --feedback-border: #78350f;
+        --text-main: #f4f4f5; /* Zinc 100 */
+        --text-muted: #a1a1aa; /* Zinc 400 */
+        --input-bg: rgba(255, 255, 255, 0.05);
+        
+        /* Keep Primary Blue but less neon */
+        --primary-grad: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        --primary-shadow: rgba(0, 0, 0, 0.4);
+        
+        --bubble-cust-bg: #27272a; /* Zinc 800 */
+        --bubble-cust-text: #e4e4e7;
+        
+        --feedback-bg: rgba(67, 20, 7, 0.4);
+        --feedback-border: rgba(249, 115, 22, 0.3);
         --feedback-text: #fdba74;
+
+        --option-bg: #18181b; 
     }
 
     * { box-sizing: border-box; }
-    body { 
-        margin: 0; font-family: 'Inter', sans-serif; 
-        background: var(--bg); color: var(--text-main); 
-        height: 100vh; display: flex; flex-direction: column; 
-        transition: background 0.3s, color 0.3s;
+
+    body {
+        margin: 0;
+        font-family: 'Outfit', sans-serif;
+        height: 100vh;
+        overflow: hidden;
+        color: var(--text-main);
+        background: var(--bg-gradient);
+        background-size: 200% 200%;
+        transition: color 0.3s, background 0.3s;
     }
 
-    /* HEADER */
-    header {
-        background: var(--sidebar-bg); border-bottom: 1px solid var(--border); 
-        padding: 0 1.5rem; height: 60px; display: flex; align-items: center; justify-content: space-between;
-    }
-    .brand { font-weight: 700; font-size: 1.1rem; color: var(--primary); display: flex; align-items: center; gap: 10px; }
-    
-    /* Theme Toggle Switch */
-    .theme-toggle {
-        background: none; border: 1px solid var(--border); color: var(--text-muted);
-        padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;
-        display: flex; align-items: center; gap: 6px; width: auto;
-    }
-    .theme-toggle:hover { background: var(--border); }
+    /* BACKGROUND ORBS */
+    .orb { position: absolute; border-radius: 50%; filter: blur(90px); z-index: -1; opacity: 0.4; }
+    .orb-1 { width: 500px; height: 500px; background: #0ea5e9; top: -150px; left: -150px; animation: float 15s infinite alternate; }
+    .orb-2 { width: 400px; height: 400px; background: #6366f1; bottom: -100px; right: -100px; animation: float 12s infinite alternate-reverse; }
+    @keyframes float { 0% { transform: translate(0,0); } 100% { transform: translate(40px, 40px); } }
 
     /* LAYOUT */
-    #layout {
-        display: grid; grid-template-columns: 320px 1fr; 
-        height: calc(100vh - 60px); overflow: hidden;
+    #app-container {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 20px;
+        height: 100vh;
+        padding: 20px;
+        max-width: 1920px;
+        margin: 0 auto;
+    }
+
+    .glass-panel {
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 8px 32px 0 var(--glass-shadow);
+        border-radius: 20px;
+        display: flex; flex-direction: column; overflow: hidden;
     }
 
     /* SIDEBAR */
-    #sidebar {
-        background: var(--sidebar-bg); border-right: 1px solid var(--border); 
-        padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; 
-        overflow-y: auto;
-    }
-    .card { 
-        background: var(--bg); border: 1px solid var(--border); 
-        border-radius: 8px; padding: 1rem; 
-    }
-    .card h3 { margin: 0 0 0.8rem 0; font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; }
+    #sidebar { padding: 1.5rem; gap: 1.5rem; overflow-y: auto; }
 
-    select, button.action-btn { 
-        width: 100%; padding: 10px; border-radius: 6px; 
-        border: 1px solid var(--border); background: var(--sidebar-bg); color: var(--text-main);
-        font-family: inherit; margin-bottom: 8px;
-    }
-    button.primary-btn {
-        width: 100%; padding: 10px; border-radius: 6px; border: none;
-        background: var(--primary); color: #fff; font-weight: 600; cursor: pointer;
-    }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .brand { font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .theme-toggle { background: transparent; border: 1px solid var(--glass-border); color: var(--text-main); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .theme-toggle:hover { background: rgba(255,255,255,0.1); }
 
-    /* STATS & TAGS */
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .stat-box { background: var(--sidebar-bg); padding: 8px; border-radius: 6px; text-align: center; border: 1px solid var(--border); }
-    .stat-val { font-weight: 700; font-size: 1.1rem; display: block; }
-    .stat-label { font-size: 0.7rem; color: var(--text-muted); }
+    /* FORM ELEMENTS */
+    label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 5px; display: block; }
+
+    select {
+        width: 100%; padding: 14px;
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
+        color: var(--text-main);
+        border-radius: 12px;
+        outline: none; cursor: pointer;
+        font-family: inherit; font-size: 0.95rem; font-weight: 500;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.2em;
+    }
     
-    .tags { display: flex; flex-wrap: wrap; gap: 5px; }
-    .tag { font-size: 0.7rem; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); }
-    .tag.missing { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.2); }
-    .tag.used { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.2); }
+    select option {
+        background-color: var(--option-bg);
+        color: var(--text-main);
+        padding: 10px;
+    }
+
+    button.primary-btn {
+        width: 100%; padding: 16px; margin-top: 10px;
+        border-radius: 12px; border: none;
+        background: var(--primary-grad);
+        color: white; font-weight: 600; font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 4px 20px var(--primary-shadow);
+        transition: transform 0.1s, box-shadow 0.2s;
+    }
+    button.primary-btn:active { transform: scale(0.98); }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-box { background: var(--input-bg); border: 1px solid var(--glass-border); padding: 12px; border-radius: 12px; text-align: center; }
+    .stat-val { font-size: 1.4rem; font-weight: 700; display: block; }
+    .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+    .tag { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--glass-border); }
+    .tag.missing { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
+    .tag.used { background: rgba(34, 197, 94, 0.15); color: #4ade80; border-color: rgba(34, 197, 94, 0.3); }
 
     /* CHAT AREA */
-    #chat-container {
-        display: flex; flex-direction: column; height: 100%; position: relative; background: var(--chat-bg);
-    }
+    #chat-container { position: relative; }
     #scenario-header {
-        background: var(--sidebar-bg); padding: 10px 20px; border-bottom: 1px solid var(--border);
-        display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-muted);
+        padding: 15px 25px; border-bottom: 1px solid var(--glass-border);
+        display: flex; justify-content: space-between; align-items: center;
+        background: rgba(0,0,0,0.05); font-weight: 500; font-size: 0.9rem;
     }
-    
-    /* SCROLLABLE CHAT FEED */
+
     #chat-feed {
-        flex: 1; padding: 1.5rem; overflow-y: auto; 
+        flex: 1; padding: 25px; overflow-y: auto;
         display: flex; flex-direction: column; gap: 1rem;
-        scroll-behavior: smooth; /* Smooth scrolling */
+        min-height: 0; scroll-behavior: smooth;
     }
 
     /* BUBBLES */
-    .msg-row { display: flex; width: 100%; }
+    .msg-row { display: flex; width: 100%; opacity: 0; animation: fadeUp 0.3s forwards; }
+    @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } from { opacity: 0; transform: translateY(10px); } }
     .msg-row.customer { justify-content: flex-start; }
     .msg-row.user { justify-content: flex-end; }
-    
-    .bubble {
-        max-width: 75%; padding: 12px 16px; border-radius: 12px; 
-        line-height: 1.5; font-size: 0.95rem; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-    .customer .bubble { background: var(--bubble-customer); color: var(--text-customer); border-bottom-left-radius: 2px; }
-    .user .bubble { background: var(--bubble-user); color: var(--text-user); border-bottom-right-radius: 2px; }
 
-    /* FEEDBACK BLOCK (SYSTEM) */
+    .bubble { max-width: 75%; padding: 14px 18px; border-radius: 18px; line-height: 1.55; position: relative; backdrop-filter: blur(5px); }
+    .customer .bubble { background: var(--bubble-cust-bg); color: var(--bubble-cust-text); border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
+    .user .bubble { background: var(--primary-grad); color: white; box-shadow: 0 4px 15px var(--primary-shadow); border-bottom-right-radius: 4px; }
+
+    /* FEEDBACK CARD */
     .feedback-block {
-        background: var(--feedback-bg); border: 1px solid var(--feedback-border); 
-        color: var(--feedback-text); border-radius: 8px; padding: 1rem;
-        margin: 5px auto; max-width: 85%; font-size: 0.9rem;
+        align-self: center; width: 90%;
+        background: var(--feedback-bg); border: 1px solid var(--feedback-border); border-left: 4px solid #f97316;
+        border-radius: 8px; padding: 12px 16px; margin-bottom: 5px;
+        color: var(--feedback-text); font-size: 0.9rem;
+        animation: fadeUp 0.3s forwards;
     }
-    .highlight { background: rgba(255, 255, 0, 0.3); font-weight: 700; padding: 0 2px; border-radius: 2px; }
+    .highlight { background: rgba(255, 230, 0, 0.3); padding: 0 3px; border-radius: 3px; font-weight: 700; color: inherit; }
 
     /* INPUT AREA */
     #input-area {
-        background: var(--sidebar-bg); padding: 1rem; border-top: 1px solid var(--border);
-        display: flex; gap: 10px; align-items: flex-end;
+        padding: 20px; background: rgba(0,0,0,0.1); border-top: 1px solid var(--glass-border);
+        display: flex; gap: 12px; align-items: stretch;
     }
-    textarea {
-        flex: 1; border: 1px solid var(--border); background: var(--bg); color: var(--text-main);
-        border-radius: 8px; padding: 12px; font-size: 1rem; resize: none; outline: none;
-    }
-    textarea:focus { border-color: var(--primary); }
 
-    /* RESPONSIVE */
-    @media(max-width: 768px){
-        #layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-        #sidebar { height: auto; max-height: 25vh; border-bottom: 1px solid var(--border); border-right: none; }
+    textarea {
+        flex: 1; background: var(--input-bg); border: 1px solid var(--glass-border);
+        border-radius: 12px; padding: 14px;
+        color: var(--text-main); font-size: 1rem; font-family: inherit;
+        resize: none; outline: none; transition: 0.2s;
+    }
+    textarea:focus { border-color: #38bdf8; background: rgba(0,0,0,0.25); }
+    
+    #sendBtn {
+        width: auto; padding: 0 30px; margin: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+
+    @media(max-width: 900px) {
+        #app-container { grid-template-columns: 1fr; grid-template-rows: auto 1fr; padding: 10px; }
+        #sidebar { max-height: 250px; }
     }
 </style>
 </head>
 <body>
 
-<header>
-    <div class="brand">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        CSR Trainer
-    </div>
-    <button class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-icon">☀️</span> <span id="theme-text">Light Mode</span>
-    </button>
-</header>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
 
-<div id="layout">
-    <div id="sidebar">
-        <div class="card">
-            <h3>Controls</h3>
+<div id="app-container">
+    <div id="sidebar" class="glass-panel">
+        <div class="brand">
+            <span>CSR Pro</span>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Switch to Dark Mode">🌙</button>
+        </div>
+
+        <div>
+            <label>Training Module</label>
             <select id="industry">
-                <option value="" disabled selected>Select Industry</option>
+                <option value="" disabled selected>Select Industry...</option>
                 {% for i in industries %}
                 <option value="{{ i }}">{{ i }}</option>
                 {% endfor %}
             </select>
-            <button class="primary-btn" onclick="startPractice()">Start Session</button>
-            <p id="warning-box" style="color:var(--danger); font-size:0.8rem; text-align:center; margin-top:5px; min-height:1em;"></p>
+            <button class="primary-btn" onclick="startPractice()">Start Session ↵</button>
+            <p id="warning-box" style="color:#f87171; font-size:0.8rem; text-align:center; margin-top:10px; min-height:1.2em;"></p>
         </div>
 
-        <div class="card" id="report-card" style="opacity:0.5; pointer-events:none;">
-            <h3>Live Analysis</h3>
+        <div id="report-card" style="opacity:0.3; transition:opacity 0.5s;">
+            <label>Live Metrics</label>
             <div class="stats-grid">
-                <div class="stat-box"><span class="stat-label">WPM</span><span class="stat-val" id="stat-wpm">-</span></div>
-                <div class="stat-box"><span class="stat-label">Tone</span><span class="stat-val" id="stat-tone">-</span></div>
+                <div class="stat-box"><span class="stat-val" id="stat-wpm">--</span><span class="stat-label">WPM</span></div>
+                <div class="stat-box"><span class="stat-val" id="stat-tone">--</span><span class="stat-label">Tone</span></div>
             </div>
-            <div style="margin-top:12px">
-                <h4 style="font-size:0.75rem; color:var(--text-muted); margin-bottom:5px">Missing Keywords:</h4>
-                <div id="missing-keywords" class="tags"></div>
+            <div style="margin-top:20px">
+                <label>Keywords</label>
+                <div id="missing-keywords" class="tags">
+                    <span style="font-size:0.8rem; opacity:0.6;">--</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="chat-container">
+    <div id="chat-container" class="glass-panel">
         <div id="scenario-header">
-            <span id="scenarioType">Select industry to begin</span>
-            <span id="timer">00:00</span>
+            <span id="scenarioType">Select industry to begin...</span>
+            <span id="timer" style="font-family: monospace; font-size: 1.2em;">00:00</span>
         </div>
 
         <div id="chat-feed">
-            <div style="text-align:center; margin-top:20vh; color:var(--text-muted);">
-                <p>Ready to practice?</p>
+            <div style="text-align:center; margin-top:30vh; opacity:0.5;">
+                <p>Ready to practice? Select an industry.</p>
             </div>
         </div>
 
         <div id="input-area">
-            <textarea id="answer" rows="1" placeholder="Type your response here..." disabled></textarea>
-            <button id="sendBtn" class="primary-btn" style="width:auto;" onclick="sendAnswer()" disabled>Send</button>
+            <textarea id="answer" rows="1" placeholder="Type response here..." disabled></textarea>
+            <button id="sendBtn" class="primary-btn" onclick="sendAnswer()" disabled>
+                Send
+            </button>
         </div>
     </div>
 </div>
 
 <script>
-// --- Theme Logic ---
+// --- THEME ---
 function toggleTheme() {
     const html = document.documentElement;
+    const btn = document.querySelector(".theme-toggle");
     const current = html.getAttribute("data-theme");
-    const icon = document.getElementById("theme-icon");
-    const text = document.getElementById("theme-text");
     
+    // Logic reversed: We start in Light, so if no attribute, go Dark
     if (current === "dark") {
-        html.setAttribute("data-theme", "light");
-        icon.innerText = "🌙";
-        text.innerText = "Dark Mode";
+        html.removeAttribute("data-theme");
+        btn.innerText = "🌙"; // Show Moon (Go Dark)
+        btn.title = "Switch to Dark Mode";
     } else {
         html.setAttribute("data-theme", "dark");
-        icon.innerText = "☀️";
-        text.innerText = "Light Mode";
+        btn.innerText = "☀"; // Show Sun (Go Light)
+        btn.title = "Switch to Light Mode";
     }
 }
 
-// --- App Logic ---
+// --- LOGIC ---
 let scenarios=[], index=0, startTime, timerInt;
-const politeWords=["sorry","apologize","please","thank","understand","assist","help","kindly"];
-const rudeWords=["stupid","useless","idiot","shut","angry","fraud"];
+const politeWords=["sorry","apologize","please","thank","understand","assist","help","kindly","appreciate"];
+const rudeWords=["stupid","useless","idiot","shut","angry","fraud","scam"];
 
 function normalize(t){ return t.toLowerCase().replace(/[^a-z\s]/g,"").split(/\s+/).filter(w=>w.length>=3); }
 
 function toneScore(text){
     let w=normalize(text);
-    if(w.some(x=>rudeWords.includes(x))) return `<span style="color:var(--danger)">Rude</span>`;
-    if(w.filter(x=>politeWords.includes(x)).length>=2) return `<span style="color:var(--success)">Polite</span>`;
-    return `<span style="color:var(--warning)">Neutral</span>`;
+    if(w.some(x=>rudeWords.includes(x))) return `<span style="color:#f87171">Negative</span>`;
+    if(w.filter(x=>politeWords.includes(x)).length>=2) return `<span style="color:#4ade80">Polite</span>`;
+    return `<span style="color:#fbbf24">Neutral</span>`;
 }
 
 function startPractice(){
     const ind = document.getElementById("industry").value;
-    if(!ind) return alert("Select an industry!");
+    if(!ind) return;
     
     document.getElementById("warning-box").innerText = "Loading...";
     
@@ -279,18 +326,17 @@ function startPractice(){
         
         enableInput();
         showCustomer();
-    });
+    }).catch(e=> document.getElementById("warning-box").innerText = "Error connecting.");
 }
 
 function showCustomer(){
     let s = scenarios[index];
-    document.getElementById("scenarioType").innerText = `Scenario ${index+1}/${scenarios.length}: ${s.scenario_type}`;
+    document.getElementById("scenarioType").innerHTML = `<span style="color:var(--text-main); font-weight:700;">Scenario ${index+1}:</span> ${s.scenario_type}`;
     
-    // Simulate delay
     setTimeout(() => {
         addBubble(s.customer, "customer");
         startTimer();
-    }, 600);
+    }, 500);
 }
 
 function startTimer(){
@@ -311,10 +357,6 @@ function sendAnswer(){
 
     let wpm = Math.round((normalize(txt).length / ((Date.now()-startTime)/1000)) * 60);
     let tone = toneScore(txt);
-
-    addBubble(txt, "user");
-
-    // Analysis
     let ideal = scenarios[index].ideal;
     let missing = normalize(ideal).filter(x=>!normalize(txt).includes(x));
 
@@ -322,19 +364,21 @@ function sendAnswer(){
     document.getElementById("stat-tone").innerHTML = tone;
     document.getElementById("missing-keywords").innerHTML = missing.length 
         ? missing.map(k=>`<span class="tag missing">${k}</span>`).join("") 
-        : `<span class="tag used">Perfect!</span>`;
+        : `<span class="tag used">✨ Perfect</span>`;
 
-    // Add Feedback Bubble
     addFeedbackBlock(ideal, txt);
+    addBubble(txt, "user");
 
     document.getElementById("answer").value="";
+    document.getElementById("answer").focus();
+    
     index++;
 
     if(index < scenarios.length){
         setTimeout(showCustomer, 1500);
     } else {
         setTimeout(() => {
-            addBubble("Session Completed! Please select a new industry.", "customer");
+            addBubble("Session Complete.", "customer");
             disableInput();
         }, 1000);
     }
@@ -353,30 +397,35 @@ function addFeedbackBlock(ideal, user){
     const chat = document.getElementById("chat-feed");
     const div = document.createElement("div");
     div.className = "feedback-block";
-    
     let highlighted = ideal.split(" ").map(w => {
         let clean = w.toLowerCase().replace(/[^a-z]/g,"");
         let match = normalize(user).some(u => clean.startsWith(u));
         return match ? `<span class="highlight">${w}</span>` : w;
     }).join(" ");
-
-    div.innerHTML = `<strong>Suggested Answer:</strong><br>${highlighted}`;
+    div.innerHTML = `<strong>Suggested:</strong> ${highlighted}`;
     chat.appendChild(div);
     scrollToBottom();
 }
 
 function scrollToBottom() {
     const chat = document.getElementById("chat-feed");
-    // setTimeout ensures the DOM has rendered the new height before we scroll
     setTimeout(() => {
-        chat.scrollTop = chat.scrollHeight;
-    }, 50);
+        const last = chat.lastElementChild;
+        if(last) last.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 100);
 }
 
-function enableInput(){ document.getElementById("answer").disabled=false; document.getElementById("sendBtn").disabled=false; document.getElementById("answer").focus(); }
-function disableInput(){ document.getElementById("answer").disabled=true; document.getElementById("sendBtn").disabled=true; }
+function enableInput(){ 
+    const tx = document.getElementById("answer");
+    tx.disabled=false; 
+    document.getElementById("sendBtn").disabled=false; 
+    tx.focus(); 
+}
+function disableInput(){ 
+    document.getElementById("answer").disabled=true; 
+    document.getElementById("sendBtn").disabled=true; 
+}
 
-// Auto-expand textarea
 const tx = document.getElementById("answer");
 tx.addEventListener("input", function(){
     this.style.height = "auto";
