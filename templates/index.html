@@ -298,6 +298,13 @@ const rudeWords=["stupid","useless","idiot","shut","angry","fraud","scam"];
 
 function normalize(t){ return t.toLowerCase().replace(/[^a-z\s]/g,"").split(/\s+/).filter(w=>w.length>=3); }
 
+// --- App Logic ---
+let scenarios=[], index=0, startTime, timerInt;
+const politeWords=["sorry","apologize","please","thank","understand","assist","help","kindly"];
+const rudeWords=["stupid","useless","idiot","shut","angry","fraud"];
+
+function normalize(t){ return t.toLowerCase().replace(/[^a-z\s]/g,"").split(/\s+/).filter(w=>w.length>=3); }
+
 function toneScore(text){
     let w=normalize(text);
     if(w.some(x=>rudeWords.includes(x))) return `<span style="color:#f87171">Negative</span>`;
